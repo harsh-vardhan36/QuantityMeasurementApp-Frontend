@@ -1,0 +1,93 @@
+<div class="app-wrapper">
+
+    <!-- Header -->
+    <header class="header">
+      <span class="header-title">📐 Quantity Measurement</span>
+      <div class="header-actions">
+        <button class="nav-btn" (click)="goToMeasurement()">🧮 Calculate</button>
+        <button class="nav-btn" (click)="goToDashboard()">👤 Profile</button>
+        <button class="logout-btn" (click)="logout()">Logout</button>
+      </div>
+    </header>
+  
+    <div class="history-container">
+  
+      <!-- Page Title -->
+      <div class="page-header">
+        <h2>📋 Calculation History</h2>
+        <span class="total-count">{{ filteredHistory.length }} records</span>
+      </div>
+  
+      <!-- Filters -->
+      <div class="filters-card">
+  
+        <!-- Search -->
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" [(ngModel)]="searchQuery"
+                 placeholder="Search history..." class="search-input" />
+        </div>
+  
+        <!-- Type Filter -->
+        <div class="filter-group">
+          <label>Type</label>
+          <select [(ngModel)]="filterType" class="filter-select">
+            <option *ngFor="let t of measurementTypes">{{ t }}</option>
+          </select>
+        </div>
+  
+        <!-- Action Filter -->
+        <div class="filter-group">
+          <label>Action</label>
+          <select [(ngModel)]="filterAction" class="filter-select">
+            <option *ngFor="let a of actionTypes">{{ a }}</option>
+          </select>
+        </div>
+  
+        <!-- Clear -->
+        <button class="clear-btn" (click)="clearFilters()">✕ Clear</button>
+      </div>
+  
+      <!-- History Table -->
+      <div class="table-card">
+        <table class="history-table" *ngIf="filteredHistory.length > 0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Type</th>
+              <th>Action</th>
+              <th>Description</th>
+              <th>Result</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of filteredHistory; let i = index">
+              <td class="index-col">{{ i + 1 }}</td>
+              <td>
+                <span class="type-tag">
+                  {{ item.icon }} {{ item.type }}
+                </span>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="getActionClass(item.action)">
+                  {{ item.action }}
+                </span>
+              </td>
+              <td class="desc-col">{{ item.description }}</td>
+              <td class="result-col">{{ item.result }}</td>
+              <td class="date-col">{{ item.date }}</td>
+            </tr>
+          </tbody>
+        </table>
+  
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="filteredHistory.length === 0">
+          <div class="empty-icon">🔍</div>
+          <p>No records found</p>
+          <button class="clear-btn" (click)="clearFilters()">Clear Filters</button>
+        </div>
+      </div>
+  
+    </div>
+  </div>
