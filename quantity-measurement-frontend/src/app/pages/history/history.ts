@@ -1,19 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MeasurementService, MeasurementResult } from '../../services/measurement';
 import { AuthService } from '../../services/auth';
-
-interface HistoryItem {
-  id: number;
-  type: string;
-  action: string;
-  description: string;
-  result: string;
-  date: string;
-  icon: string;
-}
-
+ 
+type FilterTab = 'all' | 'compare' | 'convert' | 'add' | 'subtract' | 'multiply' | 'divide' | 'errored';
+ 
 @Component({
   selector: 'app-history',
   standalone: true,
@@ -21,59 +14,178 @@ interface HistoryItem {
   templateUrl: './history.html',
   styleUrl: './history.css'
 })
-export class History {
-
-  searchQuery = '';
-  filterType  = 'All';
-  filterAction = 'All';
-
-  measurementTypes = ['All', 'Length', 'Weight', 'Temperature', 'Volume'];
-  actionTypes      = ['All', 'Comparison', 'Conversion', 'Arithmetic'];
-
-  // Dummy history data
-  allHistory: HistoryItem[] = [
-    { id: 1,  type: 'Length',      action: 'Conversion',  description: '5 Kilometer → Meter',          result: '5000 Meter',       date: '2026-03-31 11:30', icon: '📏' },
-    { id: 2,  type: 'Weight',      action: 'Comparison',  description: '100 Gram vs 0.1 Kilogram',     result: 'EQUAL',            date: '2026-03-31 11:15', icon: '⚖️' },
-    { id: 3,  type: 'Volume',      action: 'Arithmetic',  description: '3 Litre + 500 Millilitre',     result: '3.5 Litre',        date: '2026-03-31 10:50', icon: '🧪' },
-    { id: 4,  type: 'Temperature', action: 'Conversion',  description: '100 Celsius → Fahrenheit',     result: '212 Fahrenheit',   date: '2026-03-31 10:20', icon: '🌡️' },
-    { id: 5,  type: 'Length',      action: 'Comparison',  description: '1 Mile vs 1 Kilometer',        result: 'Mile is GREATER',  date: '2026-03-30 17:45', icon: '📏' },
-    { id: 6,  type: 'Weight',      action: 'Arithmetic',  description: '2 Kilogram - 500 Gram',        result: '1.5 Kilogram',     date: '2026-03-30 16:30', icon: '⚖️' },
-    { id: 7,  type: 'Length',      action: 'Conversion',  description: '100 Meter → Centimeter',       result: '10000 Centimeter', date: '2026-03-30 15:10', icon: '📏' },
-    { id: 8,  type: 'Volume',      action: 'Comparison',  description: '1 Litre vs 1000 Millilitre',   result: 'EQUAL',            date: '2026-03-30 14:00', icon: '🧪' },
-    { id: 9,  type: 'Temperature', action: 'Arithmetic',  description: '20 Celsius + 10 Celsius',      result: '30 Celsius',       date: '2026-03-29 12:00', icon: '🌡️' },
-    { id: 10, type: 'Weight',      action: 'Conversion',  description: '1 Kilogram → Gram',            result: '1000 Gram',        date: '2026-03-29 10:30', icon: '⚖️' },
+export class History implements OnInit {
+ 
+  records: MeasurementResult[] = [];
+  filtered: MeasurementResult[] = [];
+  isLoading = true;
+  error = '';
+ 
+  activeTab: FilterTab = 'all';
+ 
+  tabs: { key: FilterTab; label: string }[] = [
+    { key: 'all',       label: 'All'       },
+    { key: 'compare',   label: 'Compare'   },
+    { key: 'convert',   label: 'Convert'   },
+    { key: 'add',       label: 'Add'       },
+    { key: 'subtract',  label: 'Subtract'  },
+    { key: 'multiply',  label: 'Multiply'  },
+    { key: 'divide',    label: 'Divide'    },
+    { key: 'errored',   label: 'Errors'    },
   ];
-
-  get filteredHistory(): HistoryItem[] {
-    return this.allHistory.filter(item => {
-      const matchesType   = this.filterType   === 'All' || item.type   === this.filterType;
-      const matchesAction = this.filterAction === 'All' || item.action === this.filterAction;
-      const matchesSearch = this.searchQuery === '' ||
-        item.description.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        item.result.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        item.type.toLowerCase().includes(this.searchQuery.toLowerCase());
-      return matchesType && matchesAction && matchesSearch;
+ 
+  // Search
+  searchTerm = '';
+ 
+  constructor(
+    private svc:    MeasurementService,
+    private auth:   AuthService,
+    private router: Router,
+    private cdr:    ChangeDetectorRef
+  ) {}
+ 
+  ngOnInit(): void {
+    this.loadAll();
+  }
+ 
+  loadAll(): void {
+    this.isLoading = true;
+    this.error = '';
+ 
+    // Load all operations in parallel then merge
+    const ops = ['COMPARE', 'CONVERT', 'ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE'];
+    let completed = 0;
+    const all: MeasurementResult[] = [];
+ 
+    ops.forEach(op => {
+      this.svc.getHistory(op).subscribe({
+        next: (res) => {
+          all.push(...res);
+          completed++;
+          if (completed === ops.length) {
+            // Sort newest first (by operation order — no timestamp in DTO, so reverse insertion)
+            this.records  = all.reverse();
+            this.applyFilter();
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          }
+        },
+        error: () => {
+          completed++;
+          if (completed === ops.length) {
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          }
+        }
+      });
     });
   }
-
-  getActionClass(action: string): string {
-    switch (action) {
-      case 'Conversion':  return 'badge-blue';
-      case 'Comparison':  return 'badge-green';
-      case 'Arithmetic':  return 'badge-orange';
-      default:            return 'badge-blue';
+ 
+  selectTab(tab: FilterTab): void {
+    this.activeTab = tab;
+    this.applyFilter();
+  }
+ 
+  applyFilter(): void {
+    let data = [...this.records];
+ 
+    if (this.activeTab === 'errored') {
+      data = data.filter(r => r.error);
+    } else if (this.activeTab !== 'all') {
+      data = data.filter(r =>
+        r.operation?.toLowerCase() === this.activeTab.toUpperCase()
+      );
     }
+ 
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      data = data.filter(r =>
+        r.thisUnit?.toLowerCase().includes(term) ||
+        r.thatUnit?.toLowerCase().includes(term) ||
+        r.resultUnit?.toLowerCase().includes(term) ||
+        r.operation?.toLowerCase().includes(term) ||
+        r.resultString?.toLowerCase().includes(term)
+      );
+    }
+ 
+    this.filtered = data;
   }
-
-  clearFilters(): void {
-    this.searchQuery  = '';
-    this.filterType   = 'All';
-    this.filterAction = 'All';
+ 
+  onSearch(): void {
+    this.applyFilter();
   }
-
-  constructor(private authService: AuthService, private router: Router) {}
-
+ 
+  formatResult(r: MeasurementResult): string {
+    if (r.error) return r.errorMessage || 'Error';
+    if (r.operation === 'COMPARE') return r.resultString || '';
+    if (r.resultValue !== undefined && r.resultUnit) {
+      return `${Math.round(r.resultValue * 1_000_000) / 1_000_000} ${r.resultUnit}`;
+    }
+    return r.resultString || '';
+  }
+ 
+  formatInput(r: MeasurementResult): string {
+    const a = `${r.thisValue} ${r.thisUnit}`;
+    if (r.operation === 'CONVERT') return `${a} → ${r.thatUnit || '?'}`;
+    if (r.thatUnit && r.thatUnit !== 'N/A' && r.thatUnit !== 'FACTOR') {
+      return `${a}  &  ${r.thatValue} ${r.thatUnit}`;
+    }
+    if (r.thatUnit === 'FACTOR') return `${a}  ×  ${r.thatValue}`;
+    return a;
+  }
+ 
+  opColor(op: string | undefined): string {
+    const map: Record<string, string> = {
+      COMPARE:  '#7c6bda',
+      CONVERT:  '#1a9e75',
+      ADD:      '#2d8fd5',
+      SUBTRACT: '#e07c28',
+      MULTIPLY: '#c0392b',
+      DIVIDE:   '#8e44ad',
+    };
+    return map[op || ''] || '#888';
+  }
+ 
   goToMeasurement(): void { this.router.navigate(['/measurement']); }
-  goToDashboard():   void { this.router.navigate(['/dashboard']); }
-  logout():          void { this.authService.logout(); }
+  logout():           void { this.auth.logout(); }
 }
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

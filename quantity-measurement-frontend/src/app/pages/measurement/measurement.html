@@ -1,126 +1,193 @@
-<div class="app-wrapper">
 
-  <!-- Header -->
-  <header class="header">
-    <span class="header-title">Welcome To Quantity Measurement</span>
-    <div class="header-actions">
+<div class="navbar">
+  <h2>Welcome To Quantity Measurement</h2>
+  <div class="nav-actions">
+    <ng-container *ngIf="isLoggedIn; else guestNav">
       <button class="nav-btn" (click)="goToHistory()">📋 History</button>
-      <button class="nav-btn" (click)="goToDashboard()">👤 Profile</button>
-      <button class="logout-btn" (click)="logout()">Logout</button>
-    </div>
-  </header>
-
-  <!-- Main Card -->
-  <div class="main-card">
-
-    <!-- Choose Type -->
-    <div class="section-label">CHOOSE TYPE</div>
-    <div class="type-grid">
-      <div class="type-card"
-           *ngFor="let type of measurementTypes"
-           [class.active]="chosenType === type"
-           (click)="pickType(type)">
-        <span class="type-icon">{{ typeIcons[type] }}</span>
-        <span class="type-name">{{ type }}</span>
-      </div>
-    </div>
-
-    <!-- Choose Action -->
-    <div class="section-label">CHOOSE ACTION</div>
-    <div class="action-group">
-      <button *ngFor="let action of actionTypes"
-              [class.active]="chosenAction === action"
-              (click)="pickAction(action)">
-        {{ action }}
-      </button>
-    </div>
-
-    <!-- Comparison -->
-    <div *ngIf="chosenAction === 'Comparison'" class="inputs-row">
-      <div class="input-block">
-        <div class="input-label">FROM</div>
-        <input type="number" [(ngModel)]="fromValue" class="value-input" />
-        <select [(ngModel)]="fromUnit" class="unit-select">
-          <option *ngFor="let u of currentUnits">{{ u }}</option>
-        </select>
-      </div>
-      <div class="equals-sign">＝</div>
-      <div class="input-block">
-        <div class="input-label">TO</div>
-        <input type="number" [(ngModel)]="toValue"
-               class="value-input value-result" readonly />
-        <select [(ngModel)]="toUnit" class="unit-select">
-          <option *ngFor="let u of currentUnits">{{ u }}</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Conversion -->
-    <div *ngIf="chosenAction === 'Conversion'" class="inputs-row">
-      <div class="input-block">
-        <div class="input-label">FROM</div>
-        <input type="number" [(ngModel)]="fromValue" class="value-input" />
-        <select [(ngModel)]="fromUnit" class="unit-select">
-          <option *ngFor="let u of currentUnits">{{ u }}</option>
-        </select>
-      </div>
-      <div class="arrow-sign">→</div>
-      <div class="input-block">
-        <div class="input-label">TO</div>
-        <input type="number" [(ngModel)]="toValue"
-               class="value-input value-result" readonly />
-        <select [(ngModel)]="toUnit" class="unit-select">
-          <option *ngFor="let u of currentUnits">{{ u }}</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Arithmetic -->
-    <div *ngIf="chosenAction === 'Arithmetic'">
-      <div class="inputs-row">
-        <div class="input-block">
-          <div class="input-label">VALUE 1</div>
-          <input type="number" [(ngModel)]="value1" class="value-input" />
-          <select [(ngModel)]="unit1" class="unit-select">
-            <option *ngFor="let u of currentUnits">{{ u }}</option>
-          </select>
-        </div>
-
-        <div class="operator-block">
-          <select [(ngModel)]="chosenOperator" class="operator-select">
-            <option *ngFor="let op of operators">{{ op }}</option>
-          </select>
-        </div>
-
-        <div class="input-block">
-          <div class="input-label">VALUE 2</div>
-          <input type="number" [(ngModel)]="value2" class="value-input" />
-          <select [(ngModel)]="unit2" class="unit-select">
-            <option *ngFor="let u of currentUnits">{{ u }}</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Arithmetic Result -->
-      <div class="result-block" *ngIf="result !== null">
-        <div class="result-label">RESULT</div>
-        <div class="result-value">{{ result }}</div>
-        <select [(ngModel)]="resultUnit"
-                class="unit-select result-unit-select">
-          <option *ngFor="let u of currentUnits">{{ u }}</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Calculate Button -->
-    <button class="calculate-btn" (click)="calculate()">Calculate</button>
-
-    <!-- Comparison Result -->
-    <div class="result-block"
-         *ngIf="chosenAction === 'Comparison' && result !== null">
-      <div class="result-label">RESULT</div>
-      <div class="result-value">{{ result }}</div>
-    </div>
-
+      <button class="nav-btn" (click)="goToProfile()">👤 Profile</button>
+      <button class="nav-btn logout" (click)="logout()">Logout</button>
+    </ng-container>
+    <ng-template #guestNav>
+      <button class="nav-btn" (click)="goToLogin()">Sign In</button>
+    </ng-template>
   </div>
 </div>
+ 
+<!-- ── Main Card ──────────────────────────────────────────────────────────── -->
+<div class="page">
+  <div class="card">
+ 
+    <!-- Step 1: Choose Type -->
+    <p class="step-label">CHOOSE TYPE</p>
+    <div class="type-grid">
+      <button
+        *ngFor="let t of types"
+        class="type-btn"
+        [class.active]="selectedType === t.key"
+        (click)="selectType(t.key)">
+        <span class="type-icon">{{ t.icon }}</span>
+        <span>{{ t.label }}</span>
+      </button>
+    </div>
+ 
+    <!-- Step 2: Choose Action -->
+    <p class="step-label">CHOOSE ACTION</p>
+    <div class="action-tabs">
+      <button [class.active]="selectedAction === 'comparison'"
+              (click)="selectAction('comparison')">Comparison</button>
+      <button [class.active]="selectedAction === 'conversion'"
+              (click)="selectAction('conversion')">Conversion</button>
+      <button [class.active]="selectedAction === 'arithmetic'"
+              (click)="selectAction('arithmetic')">Arithmetic</button>
+    </div>
+ 
+    <!-- ── COMPARISON inputs ───────────────────────────────────────────────── -->
+    <ng-container *ngIf="selectedAction === 'comparison'">
+      <div class="inputs-row">
+        <div class="input-block">
+          <p class="input-label">FROM</p>
+          <input type="number" [(ngModel)]="value1" class="value-input" />
+          <select [(ngModel)]="unit1" class="unit-select">
+            <option *ngFor="let u of units" [value]="u">{{ u }}</option>
+          </select>
+        </div>
+        <div class="equals-sign">=</div>
+        <div class="input-block">
+          <p class="input-label">TO</p>
+          <input type="number" [(ngModel)]="value2" class="value-input" />
+          <select [(ngModel)]="unit2" class="unit-select">
+            <option *ngFor="let u of units" [value]="u">{{ u }}</option>
+          </select>
+        </div>
+      </div>
+    </ng-container>
+ 
+    <!-- ── CONVERSION inputs ───────────────────────────────────────────────── -->
+    <ng-container *ngIf="selectedAction === 'conversion'">
+      <div class="inputs-row">
+        <div class="input-block">
+          <p class="input-label">FROM</p>
+          <input type="number" [(ngModel)]="value1" class="value-input" />
+          <select [(ngModel)]="unit1" class="unit-select">
+            <option *ngFor="let u of units" [value]="u">{{ u }}</option>
+          </select>
+        </div>
+        <div class="equals-sign">=</div>
+        <div class="input-block">
+          <p class="input-label">TO</p>
+          <input type="number" class="value-input" [value]="showResult ? resultText.split(' ')[0] : ''" readonly />
+          <select [(ngModel)]="unit2" class="unit-select">
+            <option *ngFor="let u of units" [value]="u">{{ u }}</option>
+          </select>
+        </div>
+      </div>
+    </ng-container>
+ 
+    <!-- ── ARITHMETIC inputs ───────────────────────────────────────────────── -->
+    <ng-container *ngIf="selectedAction === 'arithmetic'">
+      <div class="op-selector">
+        <button *ngFor="let op of arithmeticOps"
+                [class.active]="arithmeticOp === op"
+                (click)="arithmeticOp = op">
+          {{ op | titlecase }}
+        </button>
+      </div>
+      <div class="inputs-row">
+        <div class="input-block">
+          <p class="input-label">VALUE 1</p>
+          <input type="number" [(ngModel)]="value1" class="value-input" />
+          <select [(ngModel)]="unit1" class="unit-select">
+            <option *ngFor="let u of units" [value]="u">{{ u }}</option>
+          </select>
+        </div>
+        <div class="op-symbol">{{ opSymbol }}</div>
+        <div class="input-block">
+          <p class="input-label">VALUE 2</p>
+          <input type="number" [(ngModel)]="value2" class="value-input" />
+          <select [(ngModel)]="unit2" class="unit-select">
+            <option *ngFor="let u of units" [value]="u">{{ u }}</option>
+          </select>
+        </div>
+      </div>
+ 
+      <!-- Target unit toggle (add / subtract only) -->
+      <div class="target-row" *ngIf="arithmeticOp === 'add' || arithmeticOp === 'subtract'">
+        <label class="target-toggle">
+          <input type="checkbox" [(ngModel)]="useTargetUnit" />
+          Express result in a specific unit
+        </label>
+        <select *ngIf="useTargetUnit" [(ngModel)]="targetUnit"
+                class="unit-select" style="margin-top:8px">
+          <option *ngFor="let u of units" [value]="u">{{ u }}</option>
+        </select>
+      </div>
+    </ng-container>
+ 
+    <!-- ── Calculate Button ────────────────────────────────────────────────── -->
+    <button class="calc-btn" (click)="calculate()" [disabled]="isLoading">
+      {{ isLoading ? 'Calculating...' : 'Calculate' }}
+    </button>
+ 
+    <!-- ── Result Panel — uses primitive string, always updates ───────────── -->
+    <div class="result-panel" *ngIf="showResult && !resultError">
+      <p class="result-label">RESULT</p>
+      <p class="result-value"
+         [ngClass]="{'result-sentence': selectedAction === 'comparison'}">
+        {{ resultText }}
+      </p>
+      <p class="result-context" *ngIf="resultOp">Operation: {{ resultOp }}</p>
+    </div>
+ 
+    <!-- ── Error Panel ─────────────────────────────────────────────────────── -->
+    <div class="error-panel" *ngIf="resultError">
+      <p>{{ resultError }}</p>
+    </div>
+ 
+    <!-- ── Guest nudge ─────────────────────────────────────────────────────── -->
+    <div class="guest-nudge" *ngIf="!isLoggedIn">
+      <span>📊 Sign in to save your history and access the dashboard</span>
+      <button (click)="goToLogin()">Sign In</button>
+    </div>
+ 
+  </div>
+</div>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

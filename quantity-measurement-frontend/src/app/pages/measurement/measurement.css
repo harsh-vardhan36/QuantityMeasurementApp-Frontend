@@ -1,269 +1,329 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-.app-wrapper {
-  min-height: 100vh;
-  background: #f0f2f5;
-  font-family: 'Segoe UI', Arial, sans-serif;
-}
-
-/* Header */
-.header {
-  background: linear-gradient(135deg, #5c6bc0, #3f51b5);
-  color: white;
-  padding: 16px 32px;
+/* ── Navbar ────────────────────────────────────────────────────────────────── */
+.navbar {
+  background: #4f5bd5;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 0 32px;
+  height: 60px;
 }
-
-.header-title {
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
+.navbar h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.nav-actions { display: flex; gap: 10px; }
 .nav-btn {
-  padding: 8px 16px;
-  background: rgba(255,255,255,0.15);
-  color: white;
-  border: 1px solid rgba(255,255,255,0.3);
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,0.6);
+  color: #fff;
   border-radius: 8px;
+  padding: 6px 16px;
   cursor: pointer;
   font-size: 13px;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
-
-.nav-btn:hover { background: rgba(255,255,255,0.25); }
-
-.logout-btn {
-  padding: 8px 20px;
-  background: white;
-  color: #3f51b5;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+.nav-btn:hover { background: rgba(255,255,255,0.15); }
+.nav-btn.logout {
+  background: #fff;
+  color: #4f5bd5;
   font-weight: 600;
-  font-size: 13px;
-  transition: all 0.2s;
+  border: none;
 }
-
-.logout-btn:hover { background: #e8eaf6; }
-
-/* Main Card */
-.main-card {
-  max-width: 800px;
-  margin: 32px auto;
-  background: white;
+ 
+/* ── Page layout ───────────────────────────────────────────────────────────── */
+.page {
+  min-height: calc(100vh - 60px);
+  background: #f4f6fb;
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px;
+}
+ 
+/* ── Card ──────────────────────────────────────────────────────────────────── */
+.card {
+  background: #fff;
   border-radius: 16px;
   padding: 32px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 760px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
 }
-
-/* Section Label */
-.section-label {
+ 
+/* ── Step labels ───────────────────────────────────────────────────────────── */
+.step-label {
   font-size: 11px;
   font-weight: 700;
-  color: #999;
-  letter-spacing: 1px;
-  margin-bottom: 12px;
+  letter-spacing: 0.08em;
+  color: #888;
+  margin: 0 0 12px;
 }
-
-/* Type Grid */
+ 
+/* ── Type grid ─────────────────────────────────────────────────────────────── */
 .type-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-bottom: 28px;
 }
-
-.type-card {
+.type-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 8px;
   padding: 20px 12px;
-  border: 2px solid #e8e8e8;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: white;
-}
-
-.type-card:hover {
-  border-color: #5c6bc0;
-  background: #f5f6ff;
-}
-
-.type-card.active {
-  border-color: #5c6bc0;
-  background: #f0f2ff;
-}
-
-.type-icon { font-size: 32px; margin-bottom: 8px; }
-
-.type-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #444;
-}
-
-/* Action Group */
-.action-group {
-  display: flex;
-  gap: 0;
-  margin-bottom: 28px;
   border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  transition: border-color 0.15s, background 0.15s;
+}
+.type-btn:hover { border-color: #4f5bd5; }
+.type-btn.active {
+  border-color: #4f5bd5;
+  background: #f0f1ff;
+  color: #4f5bd5;
+}
+.type-icon { font-size: 24px; }
+ 
+/* ── Action tabs ───────────────────────────────────────────────────────────── */
+.action-tabs {
+  display: flex;
+  border: 1px solid #e0e0e0;
   border-radius: 10px;
   overflow: hidden;
+  margin-bottom: 28px;
 }
-
-.action-group button {
+.action-tabs button {
   flex: 1;
-  padding: 12px;
+  padding: 11px 0;
   border: none;
-  background: white;
+  background: #fff;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
   color: #666;
-  transition: all 0.2s;
-  border-right: 1.5px solid #e0e0e0;
+  transition: background 0.15s, color 0.15s;
+  border-right: 1px solid #e0e0e0;
 }
-
-.action-group button:last-child { border-right: none; }
-
-.action-group button:hover { background: #f5f6ff; }
-
-.action-group button.active {
-  background: #3f51b5;
-  color: white;
-  font-weight: 600;
+.action-tabs button:last-child { border-right: none; }
+.action-tabs button.active {
+  background: #4f5bd5;
+  color: #fff;
 }
-
-/* Inputs Row */
-.inputs-row {
+ 
+/* ── Arithmetic op selector ────────────────────────────────────────────────── */
+.op-selector {
   display: flex;
-  align-items: flex-end;
-  gap: 16px;
+  gap: 8px;
   margin-bottom: 20px;
 }
-
+.op-selector button {
+  padding: 7px 18px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  color: #555;
+  transition: all 0.15s;
+}
+.op-selector button.active {
+  border-color: #4f5bd5;
+  background: #4f5bd5;
+  color: #fff;
+}
+ 
+/* ── Input row ─────────────────────────────────────────────────────────────── */
+.inputs-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
 .input-block { flex: 1; }
-
 .input-label {
   font-size: 11px;
   font-weight: 700;
-  color: #999;
-  letter-spacing: 1px;
-  margin-bottom: 8px;
+  letter-spacing: 0.07em;
+  color: #888;
+  margin: 0 0 8px;
 }
-
 .value-input {
   width: 100%;
-  padding: 16px;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 10px 10px 0 0;
+  box-sizing: border-box;
   font-size: 28px;
   font-weight: 700;
-  color: #222;
+  border: none;
+  border-bottom: 2px solid #e0e0e0;
+  padding: 4px 0;
   outline: none;
-  border-bottom: none;
+  color: #222;
+  margin-bottom: 10px;
+  background: transparent;
 }
-
-.value-input:focus { border-color: #5c6bc0; }
-
-.value-result { color: #3f51b5; }
-
+.value-input:focus { border-bottom-color: #4f5bd5; }
 .unit-select {
   width: 100%;
-  padding: 10px 14px;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 0 0 10px 10px;
+  padding: 8px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   font-size: 14px;
-  color: #555;
-  outline: none;
-  background: white;
+  color: #444;
+  background: #fff;
   cursor: pointer;
+  outline: none;
 }
-
-/* Operator */
-.operator-block {
-  padding-bottom: 2px;
-}
-
-.operator-select {
-  padding: 12px;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 10px;
+.equals-sign, .op-symbol {
   font-size: 22px;
   font-weight: 700;
-  color: #3f51b5;
-  background: white;
-  cursor: pointer;
-  outline: none;
-  width: 70px;
-  text-align: center;
+  color: #aaa;
+  padding-top: 28px;
 }
-
-.equals-sign, .arrow-sign {
-  font-size: 28px;
-  color: #bbb;
-  padding-bottom: 14px;
+ 
+/* ── Target unit ───────────────────────────────────────────────────────────── */
+.target-row {
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #555;
 }
-
-/* Result */
-.result-block {
-  border-left: 4px solid #5c6bc0;
-  padding: 16px 20px;
-  background: #f8f9ff;
-  border-radius: 0 10px 10px 0;
-  margin-top: 16px;
+.target-toggle {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 8px;
+  cursor: pointer;
 }
-
-.result-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: #999;
-  letter-spacing: 1px;
-}
-
-.result-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: #3f51b5;
-  flex: 1;
-}
-
-.result-unit-select {
-  width: auto;
-  border-radius: 8px;
-  padding: 8px 12px;
-}
-
-/* Calculate Button */
-.calculate-btn {
+ 
+/* ── Calculate button ──────────────────────────────────────────────────────── */
+.calc-btn {
   width: 100%;
-  padding: 15px;
-  background: linear-gradient(135deg, #5c6bc0, #3f51b5);
-  color: white;
+  padding: 15px 0;
+  background: #4f5bd5;
+  color: #fff;
   border: none;
   border-radius: 10px;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
+  transition: opacity 0.15s;
   margin-top: 8px;
-  transition: all 0.2s;
-  letter-spacing: 0.5px;
 }
+.calc-btn:hover   { opacity: 0.9; }
+.calc-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+ 
+/* ── Result panel ──────────────────────────────────────────────────────────── */
+.result-panel {
+  margin-top: 24px;
+  border-left: 4px solid #4f5bd5;
+  padding: 16px 20px;
+  background: #f7f8ff;
+  border-radius: 0 10px 10px 0;
+}
+.result-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #888;
+  margin: 0 0 6px;
+}
+.result-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #4f5bd5;
+  margin: 0;
+}
+ 
+/* ── Error panel ───────────────────────────────────────────────────────────── */
+.error-panel {
+  margin-top: 20px;
+  padding: 14px 18px;
+  background: #fff0f0;
+  border-left: 4px solid #e53935;
+  border-radius: 0 10px 10px 0;
+  color: #c62828;
+  font-size: 14px;
+}
+ 
+/* ── Guest nudge ───────────────────────────────────────────────────────────── */
+.guest-nudge {
+  margin-top: 24px;
+  padding: 14px 18px;
+  background: #f0f4ff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #4f5bd5;
+}
+.guest-nudge button {
+  padding: 7px 20px;
+  background: #4f5bd5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+ 
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .type-grid { grid-template-columns: repeat(2, 1fr); }
+  .inputs-row { flex-direction: column; }
+  .equals-sign, .op-symbol { padding-top: 0; }
+}
+ 
+/* Comparison result is a sentence — smaller font than numeric result */
+.result-sentence {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  line-height: 1.4;
+}
+ 
+.result-context {
+  font-size: 12px;
+  color: #888;
+  margin: 6px 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+ 
 
-.calculate-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(63,81,181,0.4);
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

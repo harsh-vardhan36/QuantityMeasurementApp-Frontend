@@ -9,7 +9,7 @@
     </div>
 
     <!-- Google Button -->
-    <button class="google-btn" (click)="loginWithGoogle()">
+    <button class="google-btn" (click)="onGoogle()" [disabled]="isLoading">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
       Continue with Google
     </button>
@@ -48,8 +48,8 @@
     <div *ngIf="activeTab === 'register'" class="form">
       <div class="form-group">
         <label>Full Name</label>
-        <input type="text" [(ngModel)]="registerName"
-               placeholder="Enter your name" />
+        <input type="text" [(ngModel)]="registerFullName"
+               placeholder="Enter your full name" />
       </div>
       <div class="form-group">
         <label>Email</label>
@@ -68,6 +68,8 @@
       </div>
       <div class="error-msg" *ngIf="registerError">{{ registerError }}</div>
       <div class="success-msg" *ngIf="registerSuccess">{{ registerSuccess }}</div>
+
+      <!-- FIX: was [Enabled]="isLoading" — wrong attribute name and wrong logic -->
       <button class="submit-btn" (click)="onRegister()" [disabled]="isLoading">
         {{ isLoading ? 'Creating account...' : 'Register' }}
       </button>

@@ -1,93 +1,113 @@
-<div class="app-wrapper">
-
-    <!-- Header -->
-    <header class="header">
-      <span class="header-title">📐 Quantity Measurement</span>
-      <div class="header-actions">
-        <button class="nav-btn" (click)="goToMeasurement()">🧮 Calculate</button>
-        <button class="nav-btn" (click)="goToDashboard()">👤 Profile</button>
-        <button class="logout-btn" (click)="logout()">Logout</button>
+<!-- Navbar -->
+<div class="navbar">
+  <h2>My History</h2>
+  <div class="nav-actions">
+    <button class="nav-btn" (click)="goToMeasurement()">Calculator</button>
+    <button class="nav-btn logout" (click)="logout()">Logout</button>
+  </div>
+</div>
+ 
+<div class="page">
+ 
+  <!-- Search bar -->
+  <div class="search-row">
+    <input
+      type="text"
+      class="search-input"
+      placeholder="Search by unit, operation..."
+      [(ngModel)]="searchTerm"
+      (ngModelChange)="onSearch()" />
+    <span class="total-badge">{{ filtered.length }} records</span>
+  </div>
+ 
+  <!-- Filter tabs -->
+  <div class="tab-row">
+    <button
+      *ngFor="let tab of tabs"
+      class="tab-btn"
+      [class.active]="activeTab === tab.key"
+      (click)="selectTab(tab.key)">
+      {{ tab.label }}
+    </button>
+  </div>
+ 
+  <!-- Loading -->
+  <div class="state-box" *ngIf="isLoading">
+    <p>Loading your history...</p>
+  </div>
+ 
+  <!-- Error -->
+  <div class="state-box error" *ngIf="error && !isLoading">
+    <p>{{ error }}</p>
+  </div>
+ 
+  <!-- Empty -->
+  <div class="state-box" *ngIf="!isLoading && !error && filtered.length === 0">
+    <p>No records found.</p>
+    <button class="go-btn" (click)="goToMeasurement()">Start calculating</button>
+  </div>
+ 
+  <!-- Records grid -->
+  <div class="records-grid" *ngIf="!isLoading && filtered.length > 0">
+    <div class="record-card" *ngFor="let r of filtered" [class.errored]="r.error">
+ 
+      <!-- Op badge -->
+      <div class="op-badge" [style.background]="opColor(r.operation)">
+        {{ r.operation }}
       </div>
-    </header>
-  
-    <div class="history-container">
-  
-      <!-- Page Title -->
-      <div class="page-header">
-        <h2>📋 Calculation History</h2>
-        <span class="total-count">{{ filteredHistory.length }} records</span>
+ 
+      <!-- Type pill -->
+      <div class="type-pill">{{ r.thisMeasurementType?.replace('Unit','') }}</div>
+ 
+      <!-- Input -->
+      <p class="record-input" [innerHTML]="formatInput(r)"></p>
+ 
+      <!-- Result -->
+      <div class="record-result" [class.error-result]="r.error">
+        {{ formatResult(r) }}
       </div>
-  
-      <!-- Filters -->
-      <div class="filters-card">
-  
-        <!-- Search -->
-        <div class="search-box">
-          <span class="search-icon">🔍</span>
-          <input type="text" [(ngModel)]="searchQuery"
-                 placeholder="Search history..." class="search-input" />
-        </div>
-  
-        <!-- Type Filter -->
-        <div class="filter-group">
-          <label>Type</label>
-          <select [(ngModel)]="filterType" class="filter-select">
-            <option *ngFor="let t of measurementTypes">{{ t }}</option>
-          </select>
-        </div>
-  
-        <!-- Action Filter -->
-        <div class="filter-group">
-          <label>Action</label>
-          <select [(ngModel)]="filterAction" class="filter-select">
-            <option *ngFor="let a of actionTypes">{{ a }}</option>
-          </select>
-        </div>
-  
-        <!-- Clear -->
-        <button class="clear-btn" (click)="clearFilters()">✕ Clear</button>
-      </div>
-  
-      <!-- History Table -->
-      <div class="table-card">
-        <table class="history-table" *ngIf="filteredHistory.length > 0">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Type</th>
-              <th>Action</th>
-              <th>Description</th>
-              <th>Result</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of filteredHistory; let i = index">
-              <td class="index-col">{{ i + 1 }}</td>
-              <td>
-                <span class="type-tag">
-                  {{ item.icon }} {{ item.type }}
-                </span>
-              </td>
-              <td>
-                <span class="badge" [ngClass]="getActionClass(item.action)">
-                  {{ item.action }}
-                </span>
-              </td>
-              <td class="desc-col">{{ item.description }}</td>
-              <td class="result-col">{{ item.result }}</td>
-              <td class="date-col">{{ item.date }}</td>
-            </tr>
-          </tbody>
-        </table>
-  
-        <!-- Empty State -->
-        <div class="empty-state" *ngIf="filteredHistory.length === 0">
-          <div class="empty-icon">🔍</div>
-          <p>No records found</p>
-          <button class="clear-btn" (click)="clearFilters()">Clear Filters</button>
-        </div>
-      </div>
-  
+ 
     </div>
   </div>
+ 
+</div>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

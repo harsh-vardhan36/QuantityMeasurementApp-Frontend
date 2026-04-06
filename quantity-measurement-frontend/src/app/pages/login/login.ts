@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
-
+ 
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -12,70 +12,79 @@ import { AuthService } from '../../services/auth';
   styleUrl: './login.css'
 })
 export class LoginComponent implements OnInit {
+ 
   activeTab: 'login' | 'register' = 'login';
-
-  // Login fields
-  loginEmail = '';
+ 
+  // Login
+  loginEmail    = '';
   loginPassword = '';
-  loginError = '';
-
-  // Register fields
-  registerName = '';
-  registerEmail = '';
-  registerPassword = '';
+  loginError    = '';
+ 
+  // Register — fullName is split inside AuthService.signup()
+  registerFullName        = '';
+  registerEmail           = '';
+  registerPassword        = '';
   registerConfirmPassword = '';
-  registerError = '';
-  registerSuccess = '';
-
+  registerError           = '';
+  registerSuccess         = '';
+ 
   isLoading = false;
-
+ 
+  private returnUrl = '/measurement';
+ 
   constructor(
-    private authService: AuthService,
+    private auth:  AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route:  ActivatedRoute
   ) {}
-
+ 
   ngOnInit(): void {
-    // Handle OAuth2 callback — token comes as ?token=...
-    this.route.queryParams.subscribe(params => {
-      const token = params['token'];
-      if (token) {
-        this.authService.handleOAuth2Callback(token);
-      }
-    });
-
-    // Already logged in → go to measurement
-    if (this.authService.hasToken()) {
-      this.router.navigate(['/measurement']);
+    // Where to go after successful auth (set by authGuard)
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/measurement';
+ 
+    // ── OAuth2 callback: /oauth2/redirect?token=JWT lands here ───────────
+    const token = this.route.snapshot.queryParams['token'];
+    if (token) {
+      this.auth.handleOAuth2Redirect(token);
+      return; // navigates away immediately
+    }
+ 
+    // Already logged in → go straight to destination
+    if (this.auth.hasToken()) {
+      this.router.navigateByUrl(this.returnUrl);
     }
   }
-
-  loginWithGoogle(): void {
-    this.authService.loginWithGoogle();
+ 
+  // ── Google ────────────────────────────────────────────────────────────────
+  onGoogle(): void {
+    this.auth.loginWithGoogle();
   }
-
+ 
+  // ── Login ─────────────────────────────────────────────────────────────────
   onLogin(): void {
+    this.loginError = '';
     if (!this.loginEmail || !this.loginPassword) {
       this.loginError = 'Please fill in all fields.';
       return;
     }
     this.isLoading = true;
-    this.loginError = '';
-
-    // Dummy login for now
-    setTimeout(() => {
-      if (this.loginEmail === 'test@test.com' && this.loginPassword === 'password') {
-        this.authService.saveToken('dummy-jwt-token-for-testing');
-        this.router.navigate(['/measurement']);
-      } else {
-        this.loginError = 'Invalid email or password.';
+ 
+    this.auth.login(this.loginEmail, this.loginPassword).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.router.navigateByUrl(this.returnUrl);
+      },
+      error: (err) => {
+        this.isLoading  = false;
+        this.loginError = this.extractError(err, 'Invalid email or password.');
       }
-      this.isLoading = false;
-    }, 800);
+    });
   }
-
+ 
+  // ── Register ──────────────────────────────────────────────────────────────
   onRegister(): void {
-    if (!this.registerName || !this.registerEmail || !this.registerPassword) {
+    this.registerError = '';
+    if (!this.registerFullName || !this.registerEmail || !this.registerPassword) {
       this.registerError = 'Please fill in all fields.';
       return;
     }
@@ -84,13 +93,59 @@ export class LoginComponent implements OnInit {
       return;
     }
     this.isLoading = true;
-    this.registerError = '';
-
-    // Dummy register for now
-    setTimeout(() => {
-      this.registerSuccess = 'Account created! Please login.';
-      this.isLoading = false;
-      setTimeout(() => this.activeTab = 'login', 1500);
-    }, 800);
+ 
+    this.auth.signup(this.registerFullName, this.registerEmail, this.registerPassword).subscribe({
+      next: () => {
+        this.isLoading       = false;
+        this.registerSuccess = 'Account created! Please sign in.';
+        setTimeout(() => {
+          this.activeTab       = 'login';
+          this.registerSuccess = '';
+        }, 1500);
+      },
+      error: (err) => {
+        this.isLoading     = false;
+        this.registerError = this.extractError(err, 'Registration failed. Please try again.');
+      }
+    });
+  }
+ 
+  // Surfaces real backend error messages instead of hiding them
+  private extractError(err: any, fallback: string): string {
+    if (err?.status === 0)   return 'Cannot reach server. Is the backend running on port 8080?';
+    if (err?.status === 409) return 'An account with this email already exists.';
+    if (err?.status === 400) {
+      // Spring validation returns errors as a map — show the first one
+      const errors = err?.error?.errors;
+      if (errors) return Object.values(errors).join(', ');
+    }
+    return err?.error?.message || err?.error?.error || fallback;
   }
 }
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
