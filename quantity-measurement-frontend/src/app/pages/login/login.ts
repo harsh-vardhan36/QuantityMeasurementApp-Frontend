@@ -20,7 +20,7 @@ export class LoginComponent implements OnInit {
   loginPassword = '';
   loginError    = '';
  
-  // Register — fullName is split inside AuthService.signup()
+  // Register
   registerFullName        = '';
   registerEmail           = '';
   registerPassword        = '';
@@ -30,26 +30,28 @@ export class LoginComponent implements OnInit {
  
   isLoading = false;
  
+  // ── Show/Hide password toggles ────────────────────────────────────────────
+  showLoginPassword           = false;
+  showRegisterPassword        = false;
+  showRegisterConfirmPassword = false;
+ 
   private returnUrl = '/measurement';
  
   constructor(
-    private auth:  AuthService,
+    private auth:   AuthService,
     private router: Router,
     private route:  ActivatedRoute
   ) {}
  
   ngOnInit(): void {
-    // Where to go after successful auth (set by authGuard)
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/measurement';
  
-    // ── OAuth2 callback: /oauth2/redirect?token=JWT lands here ───────────
     const token = this.route.snapshot.queryParams['token'];
     if (token) {
       this.auth.handleOAuth2Redirect(token);
-      return; // navigates away immediately
+      return;
     }
  
-    // Already logged in → go straight to destination
     if (this.auth.hasToken()) {
       this.router.navigateByUrl(this.returnUrl);
     }
@@ -94,28 +96,48 @@ export class LoginComponent implements OnInit {
     }
     this.isLoading = true;
  
-    this.auth.signup(this.registerFullName, this.registerEmail, this.registerPassword).subscribe({
+    // ── Smart name splitting ───────────────────────────────────────────────
+    // "Harsh"               → firstName: "Harsh",        lastName: ""
+    // "Harsh Vardhan"       → firstName: "Harsh",        lastName: "Vardhan"
+    // "Harsh Vardhan Singh" → firstName: "Harsh Vardhan" lastName: "Singh"
+    // Middle name is merged into firstName since backend has firstName + lastName only
+    const parts     = this.registerFullName.trim().split(/\s+/);
+    const firstName = parts.length >= 2
+      ? parts.slice(0, parts.length - 1).join(' ')
+      : parts[0];
+    const lastName  = parts.length >= 2
+      ? parts[parts.length - 1]
+      : '';
+ 
+    this.auth.signup(firstName, lastName, this.registerEmail, this.registerPassword).subscribe({
       next: () => {
         this.isLoading       = false;
         this.registerSuccess = 'Account created! Please sign in.';
+      
+        // clear fields (important UX fix)
+        this.registerFullName = '';
+        this.registerEmail = '';
+        this.registerPassword = '';
+        this.registerConfirmPassword = '';
+      
         setTimeout(() => {
           this.activeTab       = 'login';
           this.registerSuccess = '';
         }, 1500);
-      },
-      error: (err) => {
-        this.isLoading     = false;
-        this.registerError = this.extractError(err, 'Registration failed. Please try again.');
       }
-    });
+  });
   }
  
-  // Surfaces real backend error messages instead of hiding them
+  // ── Toggle helpers ────────────────────────────────────────────────────────
+  toggleLoginPassword():           void { this.showLoginPassword           = !this.showLoginPassword; }
+  toggleRegisterPassword():        void { this.showRegisterPassword        = !this.showRegisterPassword; }
+  toggleRegisterConfirmPassword(): void { this.showRegisterConfirmPassword = !this.showRegisterConfirmPassword; }
+ 
+  // ── Error extractor ───────────────────────────────────────────────────────
   private extractError(err: any, fallback: string): string {
     if (err?.status === 0)   return 'Cannot reach server. Is the backend running on port 8080?';
     if (err?.status === 409) return 'An account with this email already exists.';
     if (err?.status === 400) {
-      // Spring validation returns errors as a map — show the first one
       const errors = err?.error?.errors;
       if (errors) return Object.values(errors).join(', ');
     }
@@ -123,29 +145,4 @@ export class LoginComponent implements OnInit {
   }
 }
  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

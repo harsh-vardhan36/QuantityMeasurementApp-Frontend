@@ -13,7 +13,7 @@ export const routes: Routes = [
  
   // OAuth2 callback — MUST match app.oauth2.redirectUri in application.properties
   // Backend sends: http://localhost:4200/oauth2/redirect?token=JWT
-  { path: 'oauth2/redirect',
+  { path: 'oauth2/callback',
     loadComponent: () => import('./pages/login/login').then(m => m.LoginComponent)
   },
  
