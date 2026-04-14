@@ -59,7 +59,7 @@ export class MeasurementService {
   compare(input: QuantityInputDTO): Observable<MeasurementResult> {
     return this.http.post<MeasurementResult>(`${this.BASE}/compare`, input);
   }
- 
+
   convert(input: QuantityInputDTO): Observable<MeasurementResult> {
     return this.http.post<MeasurementResult>(`${this.BASE}/convert`, input);
   }
