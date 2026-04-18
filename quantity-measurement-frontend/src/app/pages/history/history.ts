@@ -1,191 +1,156 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MeasurementService, MeasurementResult } from '../../services/measurement';
 import { AuthService } from '../../services/auth';
- 
-type FilterTab = 'all' | 'compare' | 'convert' | 'add' | 'subtract' | 'multiply' | 'divide' | 'errored';
- 
+import { MeasurementService } from '../../services/measurement';
+import { MEASUREMENT_LABELS } from '../../models/measurement';
+
+interface HistoryRecord {
+  id?: number;
+  displayOp: string;
+  displayType: string;
+  displayInput: string;
+  displayResult: string;
+  displayTime: string;
+  measurementType?: string;
+  isError?: boolean;
+}
+
 @Component({
   selector: 'app-history',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './history.html',
-  styleUrl: './history.css'
+  styleUrl: './history.css',
 })
-export class History implements OnInit {
- 
-  records: MeasurementResult[] = [];
-  filtered: MeasurementResult[] = [];
-  isLoading = true;
-  error = '';
- 
-  activeTab: FilterTab = 'all';
- 
-  tabs: { key: FilterTab; label: string }[] = [
-    { key: 'all',       label: 'All'       },
-    { key: 'compare',   label: 'Compare'   },
-    { key: 'convert',   label: 'Convert'   },
-    { key: 'add',       label: 'Add'       },
-    { key: 'subtract',  label: 'Subtract'  },
-    { key: 'multiply',  label: 'Multiply'  },
-    { key: 'divide',    label: 'Divide'    },
-    { key: 'errored',   label: 'Errors'    },
-  ];
- 
-  // Search
-  searchTerm = '';
- 
+export class HistoryComponent implements OnInit {
+  records: HistoryRecord[] = [];
+  filtered: HistoryRecord[] = [];
+  loading = false;
+  errorMsg = '';
+
+  selectedOperation = '';
+  selectedType = '';
+  searchText = '';
+
+  operations = ['COMPARE', 'CONVERT', 'ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE'];
+  types = Object.keys(MEASUREMENT_LABELS);
+  typeLabels = MEASUREMENT_LABELS;
+  userName = '';
+
   constructor(
-    private svc:    MeasurementService,
-    private auth:   AuthService,
+    private authService: AuthService,
+    private measurementService: MeasurementService,
     private router: Router,
-    private cdr:    ChangeDetectorRef
   ) {}
- 
+
   ngOnInit(): void {
+    this.userName = this.authService.getCurrentUser()?.name?.split(' ')[0] || '';
     this.loadAll();
   }
- 
+
   loadAll(): void {
-    this.isLoading = true;
-    this.error = '';
- 
-    // Load all operations in parallel then merge
+    this.loading = true;
+    this.errorMsg = '';
+    this.records = [];
+
     const ops = ['COMPARE', 'CONVERT', 'ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE'];
     let completed = 0;
-    const all: MeasurementResult[] = [];
- 
-    ops.forEach(op => {
-      this.svc.getHistory(op).subscribe({
-        next: (res) => {
-          all.push(...res);
+
+    ops.forEach((op) => {
+      this.measurementService.getHistoryByOperation(op).subscribe({
+        next: (data: any[]) => {
+          data.forEach((item) => {
+            this.records.push(this.mapRecord(item, op));
+          });
           completed++;
           if (completed === ops.length) {
-            // Sort newest first (by operation order — no timestamp in DTO, so reverse insertion)
-            this.records  = all.reverse();
-            this.applyFilter();
-            this.isLoading = false;
-            this.cdr.detectChanges();
+            this.records.sort((a: any, b: any) => (b.id || 0) - (a.id || 0));
+            this.applyFilters();
+            this.loading = false;
           }
         },
         error: () => {
           completed++;
           if (completed === ops.length) {
-            this.isLoading = false;
-            this.cdr.detectChanges();
+            this.applyFilters();
+            this.loading = false;
           }
-        }
+        },
       });
     });
   }
- 
-  selectTab(tab: FilterTab): void {
-    this.activeTab = tab;
-    this.applyFilter();
-  }
- 
-  applyFilter(): void {
-    let data = [...this.records];
- 
-    if (this.activeTab === 'errored') {
-      data = data.filter(r => r.error);
-    } else if (this.activeTab !== 'all') {
-      data = data.filter(r =>
-        r.operation?.toLowerCase() === this.activeTab.toUpperCase()
-      );
-    }
- 
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase();
-      data = data.filter(r =>
-        r.thisUnit?.toLowerCase().includes(term) ||
-        r.thatUnit?.toLowerCase().includes(term) ||
-        r.resultUnit?.toLowerCase().includes(term) ||
-        r.operation?.toLowerCase().includes(term) ||
-        r.resultString?.toLowerCase().includes(term)
-      );
-    }
- 
-    this.filtered = data;
-  }
- 
-  onSearch(): void {
-    this.applyFilter();
-  }
- 
-  formatResult(r: MeasurementResult): string {
-    if (r.error) return r.errorMessage || 'Error';
-    if (r.operation === 'COMPARE') return r.resultString || '';
-    if (r.resultValue !== undefined && r.resultUnit) {
-      return `${Math.round(r.resultValue * 1_000_000) / 1_000_000} ${r.resultUnit}`;
-    }
-    return r.resultString || '';
-  }
- 
-  formatInput(r: MeasurementResult): string {
-    const a = `${r.thisValue} ${r.thisUnit}`;
-    if (r.operation === 'CONVERT') return `${a} → ${r.thatUnit || '?'}`;
-    if (r.thatUnit && r.thatUnit !== 'N/A' && r.thatUnit !== 'FACTOR') {
-      return `${a}  &  ${r.thatValue} ${r.thatUnit}`;
-    }
-    if (r.thatUnit === 'FACTOR') return `${a}  ×  ${r.thatValue}`;
-    return a;
-  }
- 
-  opColor(op: string | undefined): string {
-    const map: Record<string, string> = {
-      COMPARE:  '#7c6bda',
-      CONVERT:  '#1a9e75',
-      ADD:      '#2d8fd5',
-      SUBTRACT: '#e07c28',
-      MULTIPLY: '#c0392b',
-      DIVIDE:   '#8e44ad',
+
+  private mapRecord(item: any, op: string): HistoryRecord {
+    console.log('Item:', item); 
+    const type = item.thisMeasurementType || item.measurementType || item.thatMeasurementType || '';
+    const typeLabel = MEASUREMENT_LABELS[type] || type || '—';
+    const input =
+      `${item.thisValue ?? ''} ${item.thisUnit ?? ''} / ${item.thatValue ?? ''} ${item.thatUnit ?? ''}`.trim();
+    const result = item.isError
+      ? '⚠ Error'
+      : `${item.resultValue ?? ''} ${item.resultUnit ?? ''}`.trim() || '—';
+    const time = item.createdAt ? new Date(item.createdAt).toLocaleString() : '—';
+
+    return {
+      id: item.id,
+      displayOp: op,
+      displayType: typeLabel,
+      displayInput: input || '—',
+      displayResult: result,
+      displayTime: time,
+      measurementType: type,
+      isError: item.isError,
     };
-    return map[op || ''] || '#888';
   }
- 
-  goToMeasurement(): void { this.router.navigate(['/measurement']); }
-  logout():           void { this.auth.logout(); }
+
+  applyFilters(): void {
+    this.filtered = this.records.filter((r) => {
+      const matchOp = !this.selectedOperation || r.displayOp === this.selectedOperation;
+      const matchType = !this.selectedType || r.measurementType === this.selectedType;
+      const matchSearch =
+        !this.searchText ||
+        r.displayResult.toLowerCase().includes(this.searchText.toLowerCase()) ||
+        r.displayInput.toLowerCase().includes(this.searchText.toLowerCase());
+      return matchOp && matchType && matchSearch;
+    });
+  }
+
+  clearFilters(): void {
+    this.selectedOperation = '';
+    this.selectedType = '';
+    this.searchText = '';
+    this.applyFilters();
+  }
+
+  // ── DELETE ALL ──────────────────────────────────────────────────
+  deleteAll(): void {
+    if (!confirm('Do you want to delete all history?')) return;
+    this.measurementService.deleteAllHistory().subscribe({
+      next: () => this.loadAll(),
+      error: () => alert('Delete failed!'),
+    });
+  }
+
+  // ── DELETE BY ID ────────────────────────────────────────────────
+  deleteById(id: number | undefined): void {
+    if (!id) return;
+    if (!confirm('Do you want to delete this history?')) return;
+    this.measurementService.deleteHistoryById(id).subscribe({
+      next: () => {
+        this.records = this.records.filter((r) => r.id !== id);
+        this.applyFilters();
+      },
+      error: () => alert('Delete failed!'),
+    });
+  }
+
+  goBack(): void {
+    this.router.navigate(['/measurement']);
+  }
+
+  logout(): void {
+    this.authService.logout();
+  }
 }
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

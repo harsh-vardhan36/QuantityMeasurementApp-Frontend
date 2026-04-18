@@ -1,140 +1,68 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../environments/environment';
- 
-// Mirrors QuantityDTO.java exactly
-export interface QuantityDTO {
-  value: number;
-  unit: string;
-  measurementType: 'LengthUnit' | 'VolumeUnit' | 'WeightUnit' | 'TemperatureUnit';
-}
- 
-// Mirrors QuantityInputDTO.java exactly
-export interface QuantityInputDTO {
-  thisQuantityDTO: QuantityDTO;
-  thatQuantityDTO: QuantityDTO;
-  targetQuantityDTO?: QuantityDTO;
-}
- 
-// Mirrors QuantityMeasurementDTO.java exactly — all real field names
-export interface MeasurementResult {
-  thisValue?:             number;
-  thisUnit?:             string;
-  thisMeasurementType?:  string;
-  thatValue?:             number;
-  thatUnit?:             string;
-  thatMeasurementType?:  string;
-  operation?:            string;
-  resultString?:         string;
-  resultValue?:          number;
-  resultUnit?:           string;
-  resultMeasurementType?: string;
-  error?:                boolean;
-  errorMessage?:         string;
-}
- 
-// Units per measurement type
-export const UNIT_MAP: Record<string, string[]> = {
-  LengthUnit:      ['FEET', 'INCHES', 'YARDS', 'CENTIMETERS'],
-  VolumeUnit:      ['LITER', 'MILLILITER', 'GALLON'],
-  WeightUnit:      ['MILLIGRAM', 'GRAM', 'KILOGRAM', 'POUND', 'TONNE'],
-  TemperatureUnit: ['CELSIUS', 'FAHRENHEIT', 'KELVIN'],
-};
- 
-export const TYPE_LABELS: Record<string, string> = {
-  LengthUnit:      'Length',
-  VolumeUnit:      'Volume',
-  WeightUnit:      'Weight',
-  TemperatureUnit: 'Temperature',
-};
- 
+import { QuantityInputDTO, QuantityMeasurementDTO } from '../models/measurement';
+import { environment } from '../../environments/environment';
+
 @Injectable({ providedIn: 'root' })
 export class MeasurementService {
- 
-  private readonly BASE = `${environment.apiUrl}/api/user/quantities`;
- 
+  private base = `${environment.apiUrl}/api/user/quantities`;
+
   constructor(private http: HttpClient) {}
- 
-  compare(input: QuantityInputDTO): Observable<MeasurementResult> {
-    return this.http.post<MeasurementResult>(`${this.BASE}/compare`, input);
+
+  compare(body: QuantityInputDTO): Observable<QuantityMeasurementDTO> {
+    return this.http.post<QuantityMeasurementDTO>(`${this.base}/compare`, body);
   }
 
-  convert(input: QuantityInputDTO): Observable<MeasurementResult> {
-    return this.http.post<MeasurementResult>(`${this.BASE}/convert`, input);
+  convert(body: QuantityInputDTO): Observable<QuantityMeasurementDTO> {
+    return this.http.post<QuantityMeasurementDTO>(`${this.base}/convert`, body);
   }
- 
-  add(input: QuantityInputDTO): Observable<MeasurementResult> {
-    return input.targetQuantityDTO
-      ? this.http.post<MeasurementResult>(`${this.BASE}/add-with-target-unit`, input)
-      : this.http.post<MeasurementResult>(`${this.BASE}/add`, input);
+
+  add(body: QuantityInputDTO): Observable<QuantityMeasurementDTO> {
+    return this.http.post<QuantityMeasurementDTO>(`${this.base}/add`, body);
   }
- 
-  subtract(input: QuantityInputDTO): Observable<MeasurementResult> {
-    return input.targetQuantityDTO
-      ? this.http.post<MeasurementResult>(`${this.BASE}/subtract-with-target-unit`, input)
-      : this.http.post<MeasurementResult>(`${this.BASE}/subtract`, input);
+
+  addWithTarget(body: QuantityInputDTO): Observable<QuantityMeasurementDTO> {
+    return this.http.post<QuantityMeasurementDTO>(`${this.base}/add-with-target-unit`, body);
   }
- 
-  multiply(input: QuantityInputDTO): Observable<MeasurementResult> {
-    return this.http.post<MeasurementResult>(`${this.BASE}/multiply`, input);
+
+  subtract(body: QuantityInputDTO): Observable<QuantityMeasurementDTO> {
+    return this.http.post<QuantityMeasurementDTO>(`${this.base}/subtract`, body);
   }
- 
-  divide(input: QuantityInputDTO): Observable<MeasurementResult> {
-    return this.http.post<MeasurementResult>(`${this.BASE}/divide`, input);
+
+  multiply(body: QuantityInputDTO): Observable<QuantityMeasurementDTO> {
+    return this.http.post<QuantityMeasurementDTO>(`${this.base}/multiply`, body);
   }
- 
-  getHistory(operation: string): Observable<MeasurementResult[]> {
-    return this.http.get<MeasurementResult[]>(`${this.BASE}/history/operation/${operation}`);
+
+  divide(body: QuantityInputDTO): Observable<QuantityMeasurementDTO> {
+    return this.http.post<QuantityMeasurementDTO>(`${this.base}/divide`, body);
   }
- 
-  getHistoryByType(type: string): Observable<MeasurementResult[]> {
-    return this.http.get<MeasurementResult[]>(`${this.BASE}/history/type/${type}`);
+
+  getHistoryByOperation(operation: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/history/operation/${operation}`);
   }
- 
-  getErrorHistory(): Observable<MeasurementResult[]> {
-    return this.http.get<MeasurementResult[]>(`${this.BASE}/history/errored`);
+
+  getHistoryByType(type: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/history/type/${type}`);
   }
- 
-  getCount(operation: string): Observable<any> {
-    return this.http.get<any>(`${this.BASE}/count/${operation}`);
+
+  getOperationCount(operation: string): Observable<any> {
+    return this.http.get<any>(`${this.base}/count/${operation}`);
+  }
+
+  deleteAllHistory(): Observable<any> {
+    return this.http.delete(`${this.base}/history/all`, {
+      responseType: 'text',
+    });
+  }
+
+  deleteHistoryById(id: number): Observable<any> {
+    return this.http.delete(`${this.base}/history/${id}`, {
+      responseType: 'text',
+    });
+  }
+
+  getErrorHistory(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/history/errored`);
   }
 }
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

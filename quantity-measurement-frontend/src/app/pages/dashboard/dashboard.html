@@ -1,130 +1,49 @@
-<div class="app-wrapper">
- 
-  <!-- Header -->
-  <header class="header">
-    <span class="header-title">📐 Quantity Measurement</span>
-    <div class="header-actions">
-      <button class="nav-btn" (click)="goToMeasurement()">🧮 Calculate</button>
-      <button class="nav-btn" (click)="goToHistory()">📋 History</button>
-      <button class="logout-btn" (click)="logout()">Logout</button>
+<div class="dashboard-wrap">
+
+  <div class="header">
+    <span class="user-greeting">Hi, {{ userName }}</span>
+    <h1>Welcome To Quantity Measurement</h1>
+    <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+  </div>
+
+  <div class="dash-body">
+
+    <div class="section-label">Quick Access</div>
+    <div class="quick-grid">
+      <div class="quick-card" (click)="goTo('measurement')">
+        <span class="quick-icon">🧮</span>
+        <div class="quick-title">Calculator</div>
+        <div class="quick-sub">Compare, Convert & Arithmetic</div>
+      </div>
+      <div class="quick-card" (click)="goTo('history')">
+        <span class="quick-icon">📋</span>
+        <div class="quick-title">History</div>
+        <div class="quick-sub">All past calculations</div>
+      </div>
     </div>
-  </header>
- 
-  <div class="dashboard-container">
- 
-    <!-- Loading -->
-    <div class="profile-card" *ngIf="isLoading">
-      <div class="spinner"></div>
-      <p style="color:#888; font-size:14px;">Loading profile...</p>
+
+    <div class="section-label" style="margin-top: 28px;">Operation Stats</div>
+
+    <div class="loading-msg" *ngIf="loading">Loading stats...</div>
+
+    <div class="stats-grid" *ngIf="!loading">
+      <div class="stat-card" *ngFor="let s of stats" [style.border-top-color]="s.color">
+        <span class="stat-icon">{{ s.icon }}</span>
+        <div class="stat-value" [style.color]="s.color">{{ s.value }}</div>
+        <div class="stat-label">{{ s.label }}</div>
+      </div>
     </div>
- 
-    <!-- Profile Card -->
-    <div class="profile-card" *ngIf="!isLoading && user">
- 
-      <!-- Avatar + Emoji Picker -->
-      <div class="avatar-section" (click)="$event.stopPropagation()">
-        <button class="avatar-btn" (click)="togglePicker($event)" title="Click to set emoji">
-          <span *ngIf="user.avatarEmoji" class="avatar-emoji">{{ user.avatarEmoji }}</span>
-          <span *ngIf="!user.avatarEmoji" class="avatar-initials">{{ getInitials() }}</span>
-          <span class="avatar-edit-badge">✏️</span>
-        </button>
- 
-        <!-- Emoji Picker -->
-        <div class="emoji-picker" *ngIf="showEmojiPicker">
-          <div class="picker-search-row">
-            <input
-              class="picker-search"
-              type="text"
-              placeholder="🔍  Search..."
-              [(ngModel)]="emojiSearch"
-              (click)="$event.stopPropagation()"
-            />
-          </div>
-          <div class="picker-tabs" *ngIf="!emojiSearch">
-            <button
-              *ngFor="let cat of emojiCategories; let i = index"
-              class="picker-tab"
-              [class.active]="activeCategory === i"
-              (click)="activeCategory = i"
-            >{{ cat.label }}</button>
-          </div>
-          <div class="picker-grid">
-            <button
-              *ngFor="let emoji of filteredEmojis"
-              class="emoji-opt"
-              [class.selected]="user.avatarEmoji === emoji"
-              (click)="selectEmoji(emoji)"
-            >{{ emoji }}</button>
-          </div>
-          <div class="picker-footer" *ngIf="user.avatarEmoji">
-            <span>Current: {{ user.avatarEmoji }}</span>
-            <button class="clear-btn" (click)="clearEmoji()">Remove</button>
-          </div>
+
+    <div class="section-label" style="margin-top: 28px;">Per-Operation Count</div>
+    <div class="op-table" *ngIf="!loading">
+      <div class="op-row" *ngFor="let op of operations">
+        <span class="op-name-badge" [ngClass]="'op-' + op.toLowerCase()">{{ op }}</span>
+        <div class="op-bar-wrap">
+          <div class="op-bar" [style.width.%]="getBarPct(op)"></div>
         </div>
-      </div>
- 
-      <!-- Profile Info -->
-      <div class="profile-info">
-        <h2>{{ getFullName() }}</h2>
-        <p class="email">{{ user.email }}</p>
-        <span class="provider-badge" [class.google]="user.provider?.toUpperCase() === 'GOOGLE'">
-          {{ user.provider?.toUpperCase() === 'GOOGLE' ? '🔵 Google Account' : '📧 Email Account' }}
-        </span>
-      </div>
- 
-      <!-- Save area -->
-      <div class="save-area">
-        <button class="save-btn" (click)="saveProfile()" [disabled]="isSaving">
-          {{ isSaving ? 'Saving...' : '💾 Save' }}
-        </button>
-        <p class="save-success" *ngIf="saveSuccess">✅ Saved!</p>
-        <p class="save-error"   *ngIf="saveError">⚠️ {{ saveError }}</p>
+        <span class="op-count">{{ opCounts[op] || 0 }}</span>
       </div>
     </div>
- 
-    <!-- Stats Grid -->
-    <div class="stats-grid">
-      <div class="stat-card" *ngFor="let stat of stats">
-        <div class="stat-icon">{{ stat.icon }}</div>
-        <div class="stat-value">{{ stat.value }}</div>
-        <div class="stat-label">{{ stat.label }}</div>
-      </div>
-    </div>
- 
-    <!-- Recent Activity -->
-    <div class="section-card">
-      <h3 class="section-title">Recent Activity</h3>
-      <div class="activity-list" *ngIf="recentActivity.length > 0">
-        <div class="activity-item" *ngFor="let item of recentActivity">
-          <div class="activity-icon">{{ item.icon }}</div>
-          <div class="activity-content">
-            <div class="activity-type">{{ item.type }}</div>
-            <div class="activity-desc">{{ item.description }}</div>
-          </div>
-          <div class="activity-time">{{ item.time }}</div>
-        </div>
-      </div>
-      <p class="empty-state" *ngIf="recentActivity.length === 0">
-        No activity yet. Start calculating! 🧮
-      </p>
-    </div>
- 
-    <!-- Quick Actions -->
-    <div class="section-card">
-      <h3 class="section-title">Quick Actions</h3>
-      <div class="quick-actions">
-        <button class="action-card" (click)="goToMeasurement()">
-          <span class="action-icon">🧮</span>
-          <span>New Calculation</span>
-        </button>
-        <button class="action-card" (click)="goToHistory()">
-          <span class="action-icon">📋</span>
-          <span>View History</span>
-        </button>
-      </div>
-    </div>
- 
+
   </div>
 </div>
- 
-
